@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gauss / Chaos — Gauss DSP™</title>
+<meta name="description" content="A randomized FX chain plugin for Pro Tools, VST3, and AU. Ten analog-modeled effects. Tier-ordered signal flow. Hit Transmute. Something will happen.">
+<meta property="og:title" content="Gauss / Chaos — Gauss DSP™">
+<meta property="og:description" content="A randomized FX chain plugin for Pro Tools, VST3, and AU.">
+<meta property="og:url" content="https://gaussdsp.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --iron: #1A1714;
+    --console: #2E2B27;
+    --plate: #3D3A35;
+    --aluminium: #B8B5AB;
+    --cream: #E8E4DC;
+    --amber: #C8873A;
+    --amber-dim: #9B6528;
+    --off-white: #F2EEE6;
+    --serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    --mono: 'Courier Prime', 'Courier New', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--iron);
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+  section { padding: 6rem 0; }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(26,23,20,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--plate);
+    padding: 1rem 0;
+  }
+  nav .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cream);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--amber); }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--aluminium);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cream); }
+  .nav-cta {
+    background: var(--amber) !important;
+    color: var(--iron) !important;
+    padding: 7px 16px;
+    border-radius: 3px;
+    font-weight: 700 !important;
+  }
+  .nav-cta:hover { background: #d4923f !important; }
+
+  /* ── HERO ── */
+  #hero {
+    padding: 8rem 0 7rem;
+    border-bottom: 0.5px solid var(--plate);
+    position: relative;
+    overflow: hidden;
+  }
+  #hero::after {
+    content: '';
+    position: absolute;
+    top: -120px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,135,58,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.1s forwards;
+  }
+  .hero-headline {
+    font-size: clamp(42px, 7vw, 72px);
+    line-height: 1.05;
+    font-weight: 400;
+    color: var(--cream);
+    margin-bottom: 1.75rem;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.2s forwards;
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--amber);
+  }
+  .hero-sub {
+    font-size: 18px;
+    color: var(--aluminium);
+    max-width: 540px;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.35s forwards;
+  }
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.45s forwards;
+  }
+  .btn-primary {
+    background: var(--amber);
+    color: var(--iron);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border-radius: 3px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: #d4923f; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-ghost {
+    color: var(--aluminium);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 13px 24px;
+    border-radius: 3px;
+    border: 0.5px solid var(--plate);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+    display: inline-block;
+  }
+  .btn-ghost:hover { border-color: var(--aluminium); color: var(--cream); }
+  .hero-format-tags {
+    margin-top: 2rem;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 0.55s forwards;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--aluminium);
+    background: var(--console);
+    border: 0.5px solid var(--plate);
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  /* ── SECTION HEADINGS ── */
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1rem;
+  }
+  .section-heading {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 400;
+    color: var(--cream);
+    line-height: 1.15;
+    margin-bottom: 1.25rem;
+  }
+  .section-heading em { font-style: italic; color: var(--aluminium); }
+  .section-body {
+    font-size: 16px;
+    color: var(--aluminium);
+    max-width: 560px;
+    line-height: 1.75;
+  }
+
+  /* ── DIVIDER ── */
+  .rule {
+    border: none;
+    border-top: 0.5px solid var(--plate);
+  }
+
+  /* ── HOW IT WORKS ── */
+  #how { border-bottom: 0.5px solid var(--plate); }
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 1px;
+    background: var(--plate);
+    border: 0.5px solid var(--plate);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 3rem;
+  }
+  .how-cell {
+    background: var(--iron);
+    padding: 2rem 1.75rem;
+    transition: background 0.2s;
+  }
+  .how-cell:hover { background: var(--console); }
+  .how-number {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--amber);
+    margin-bottom: 0.75rem;
+  }
+  .how-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--cream);
+    margin-bottom: 0.6rem;
+  }
+  .how-body { font-size: 14px; color: var(--aluminium); line-height: 1.7; }
+
+  /* ── EFFECT POOL ── */
+  #effects {
+    background: var(--console);
+    border-top: 0.5px solid var(--plate);
+    border-bottom: 0.5px solid var(--plate);
+  }
+  .tier-block { margin-bottom: 2rem; }
+  .tier-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--aluminium);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 0.5px solid var(--plate);
+  }
+  .tier-arrow {
+    color: var(--amber);
+    margin: 0 6px;
+  }
+  .fx-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fx-pill {
+    border: 0.5px solid var(--plate);
+    border-radius: 3px;
+    padding: 8px 14px;
+    background: var(--iron);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .fx-pill:hover {
+    border-color: var(--amber);
+    background: rgba(200,135,58,0.05);
+  }
+  .fx-pill-name {
+    font-size: 15px;
+    color: var(--cream);
+    display: block;
+  }
+  .fx-pill-desc {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--aluminium);
+    display: block;
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+  .chain-diagram {
+    margin-top: 2.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--iron);
+    border: 0.5px solid var(--plate);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--aluminium);
+    letter-spacing: 0.06em;
+  }
+  .chain-diagram .chain-note {
+    color: var(--amber);
+    margin-bottom: 6px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .chain-steps {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .chain-step {
+    padding: 5px 12px;
+    border: 0.5px solid var(--plate);
+    border-radius: 2px;
+    color: var(--cream);
+    font-size: 12px;
+  }
+  .chain-step.amber { border-color: var(--amber-dim); color: var(--amber); }
+  .chain-arrow { color: var(--plate); font-size: 14px; }
+
+  /* ── TESTIMONIAL ── */
+  #quote {
+    padding: 5rem 0;
+    border-bottom: 0.5px solid var(--plate);
+  }
+  blockquote {
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--cream);
+    line-height: 1.4;
+    max-width: 680px;
+    position: relative;
+    padding-left: 2rem;
+  }
+  blockquote::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.2em;
+    bottom: 0.2em;
+    width: 2px;
+    background: var(--amber);
+    border-radius: 1px;
+  }
+  .quote-attr {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--aluminium);
+    margin-top: 1.25rem;
+    padding-left: 2rem;
+  }
+
+  /* ── SPECS ── */
+  #specs { border-bottom: 0.5px solid var(--plate); }
+  .specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 3rem;
+    margin-top: 3rem;
+  }
+  .spec-table { width: 100%; border-collapse: collapse; }
+  .spec-table tr { border-bottom: 0.5px solid var(--plate); }
+  .spec-table tr:last-child { border-bottom: none; }
+  .spec-table td {
+    padding: 10px 0;
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .spec-table td:first-child {
+    font-family: var(--mono);
+    color: var(--aluminium);
+    letter-spacing: 0.04em;
+    width: 48%;
+    padding-right: 1rem;
+  }
+  .spec-table td:last-child { color: var(--cream); }
+
+  /* ── PRICING ── */
+  #pricing {
+    border-bottom: 0.5px solid var(--plate);
+  }
+  .pricing-card {
+    background: var(--console);
+    border: 0.5px solid var(--plate);
+    border-radius: 4px;
+    padding: 3rem;
+    max-width: 600px;
+    margin-top: 3rem;
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 2.5rem;
+    align-items: start;
+  }
+  .price-amount {
+    font-size: 56px;
+    font-weight: 400;
+    color: var(--cream);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .price-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--aluminium);
+    margin-bottom: 1.5rem;
+  }
+  .pricing-divider {
+    border: none;
+    border-left: 0.5px solid var(--plate);
+    height: 100%;
+  }
+  .includes-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 1rem;
+  }
+  .includes-list {
+    list-style: none;
+    font-size: 13px;
+    color: var(--aluminium);
+    line-height: 2.1;
+  }
+  .includes-list li::before {
+    content: '—';
+    color: var(--plate);
+    margin-right: 8px;
+    font-family: var(--mono);
+  }
+
+  /* ── ABOUT ── */
+  #about { border-bottom: 0.5px solid var(--plate); }
+  .about-body {
+    font-size: 17px;
+    color: var(--aluminium);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-top: 1.5rem;
+  }
+  .serial {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--plate);
+    margin-top: 2.5rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 2.5rem 0;
+    border-top: 0.5px solid var(--plate);
+  }
+  footer .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .footer-logo {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--aluminium);
+  }
+  .footer-logo span { color: var(--amber); }
+  .footer-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--plate);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .how-grid { grid-template-columns: 1fr; }
+    .specs-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .pricing-card { grid-template-columns: 1fr; gap: 1.5rem; }
+    .nav-links { display: none; }
+    section { padding: 4rem 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <a href="#" class="nav-logo">Gauss <span>DSP</span>™</a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#effects">Effects</a></li>
+      <li><a href="#specs">Specs</a></li>
+      <li><a href="#pricing" class="nav-cta">Buy — $59</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Gauss / Chaos — Randomized FX Chain Plugin</div>
+    <h1 class="hero-headline">
+      Hit <em>Transmute.</em><br>Something will happen.
+    </h1>
+    <p class="hero-sub">
+      A randomized FX chain plugin for Pro Tools, VST3, and AU. Each press selects, orders, and configures a new signal chain from ten analog-modeled effects. No two are the same.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Buy — $59</a>
+      <a href="#how" class="btn-ghost">How it works</a>
+    </div>
+    <div class="hero-format-tags">
+      <span class="tag">AAX</span>
+      <span class="tag">VST3</span>
+      <span class="tag">AU</span>
+      <span class="tag">Pro Tools</span>
+      <span class="tag">Logic</span>
+      <span class="tag">Cubase</span>
+      <span class="tag">Reaper</span>
+      <span class="tag">macOS</span>
+      <span class="tag">Windows</span>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-eyebrow">How it works</div>
+      <h2 class="section-heading">Ordered chaos.<br><em>Not random noise.</em></h2>
+      <p class="section-body">
+        Most randomizers throw effects at the wall. Gauss / Chaos applies signal flow theory. What sounds like chaos follows rules you'd use yourself — you just wouldn't have thought of that combination.
+      </p>
+    </div>
+    <div class="how-grid reveal">
+      <div class="how-cell">
+        <div class="how-number">01 — Tier ordering</div>
+        <div class="how-title">Character before modulation. Always.</div>
+        <div class="how-body">Saturation and dirt effects precede modulation. Modulation precedes space. Reverb is always last. The chain is random. The logic is not.</div>
+      </div>
+      <div class="how-cell">
+        <div class="how-number">02 — Weighted probability</div>
+        <div class="how-title">Not all effects are equally likely.</div>
+        <div class="how-body">Each effect carries a probability weight. Adjacency rules prevent combinations that would only produce noise — Chorus into Phaser, BitCrusher into Tube Saturation.</div>
+      </div>
+      <div class="how-cell">
+        <div class="how-number">03 — Per-effect bypass</div>
+        <div class="how-title">Keep what works. Remove what doesn't.</div>
+        <div class="how-body">Any effect in the active chain can be bypassed independently. Amber pilot light shows status. The chain continues around it.</div>
+      </div>
+      <div class="how-cell">
+        <div class="how-number">04 — Destroy</div>
+        <div class="how-title">A hard clipper on the output.</div>
+        <div class="how-body">The VU needle tells you when you've gone too far. Drive the output into hard clipping. Watch the meter peg. You'll go too far. That's fine.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EFFECTS -->
+<section id="effects">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-eyebrow">Effect pool</div>
+      <h2 class="section-heading">Ten effects.<br><em>Three to six per chain.</em></h2>
+      <p class="section-body">
+        Each transmutation draws from the full pool, subject to tier rules and adjacency constraints.
+      </p>
+    </div>
+    <div style="margin-top: 3rem;">
+      <div class="tier-block reveal">
+        <div class="tier-label">Tier 1 <span class="tier-arrow">→</span> Character / Dirt</div>
+        <div class="fx-grid">
+          <div class="fx-pill"><span class="fx-pill-name">Tube Saturation</span><span class="fx-pill-desc">Analog warmth, harmonic drive</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">BitCrusher</span><span class="fx-pill-desc">Sample rate &amp; bit reduction</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">Tape Flutter</span><span class="fx-pill-desc">Wow, flutter, transport instability</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">Ring Mod</span><span class="fx-pill-desc">Carrier frequency modulation</span></div>
+        </div>
+      </div>
+      <div class="tier-block reveal" style="margin-top:1.75rem;">
+        <div class="tier-label">Tier 2 <span class="tier-arrow">→</span> Modulation</div>
+        <div class="fx-grid">
+          <div class="fx-pill"><span class="fx-pill-name">Chorus</span><span class="fx-pill-desc">Multi-voice pitch modulation</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">Phaser</span><span class="fx-pill-desc">All-pass filter sweep</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">Tremolo</span><span class="fx-pill-desc">LFO amplitude modulation</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">AutoFilter</span><span class="fx-pill-desc">Envelope-controlled filter</span></div>
+        </div>
+      </div>
+      <div class="tier-block reveal" style="margin-top:1.75rem;">
+        <div class="tier-label">Tier 3 <span class="tier-arrow">→</span> Space</div>
+        <div class="fx-grid">
+          <div class="fx-pill"><span class="fx-pill-name">Reverb</span><span class="fx-pill-desc">Always last in chain</span></div>
+          <div class="fx-pill"><span class="fx-pill-name">Slap Delay</span><span class="fx-pill-desc">Short ambience delay</span></div>
+        </div>
+      </div>
+      <div class="chain-diagram reveal">
+        <div class="chain-note">Example chain — every transmutation is different</div>
+        <div class="chain-steps">
+          <span class="chain-step">Input</span>
+          <span class="chain-arrow">›</span>
+          <span class="chain-step amber">Tape Flutter</span>
+          <span class="chain-arrow">›</span>
+          <span class="chain-step amber">AutoFilter</span>
+          <span class="chain-arrow">›</span>
+          <span class="chain-step amber">Phaser</span>
+          <span class="chain-arrow">›</span>
+          <span class="chain-step amber">Reverb</span>
+          <span class="chain-arrow">›</span>
+          <span class="chain-step">Mix + Destroy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section id="quote">
+  <div class="container reveal">
+    <blockquote>
+      "I've been using it on everything. Drum room mics, background vocals, spot FX. It keeps suggesting things I wouldn't have reached for. That's the point."
+    </blockquote>
+    <div class="quote-attr">— Beta tester, Nashville, TN</div>
+  </div>
+</section>
+
+<!-- SPECS -->
+<section id="specs">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-eyebrow">Technical specification</div>
+      <h2 class="section-heading">Built for<br><em>professional sessions.</em></h2>
+    </div>
+    <div class="specs-grid reveal">
+      <table class="spec-table">
+        <tr><td>Plugin formats</td><td>AAX · VST3 · AU</td></tr>
+        <tr><td>OS support</td><td>macOS 10.15+ · Windows 10+</td></tr>
+        <tr><td>DAW compatibility</td><td>Pro Tools · Logic Pro · Cubase · Reaper · Live · Studio One</td></tr>
+        <tr><td>Effect pool</td><td>10 analog-modeled effects</td></tr>
+        <tr><td>Chain length</td><td>3–6 effects per transmutation</td></tr>
+      </table>
+      <table class="spec-table">
+        <tr><td>Thread safety</td><td>Audio / UI threads fully isolated</td></tr>
+        <tr><td>Metering</td><td>RMS VU · fast attack · slow decay</td></tr>
+        <tr><td>Parameter state</td><td>Full DAW automation + preset recall</td></tr>
+        <tr><td>Activation</td><td>Serial number · no iLok required</td></tr>
+        <tr><td>License</td><td>Single user · all formats included</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-heading">One price.<br><em>Every format.</em></h2>
+    </div>
+    <div class="pricing-card reveal">
+      <div>
+        <div class="price-amount">$59</div>
+        <div class="price-note">Single license · all formats</div>
+        <a href="#" class="btn-primary">Buy Gauss / Chaos</a>
+      </div>
+      <div>
+        <div class="includes-label">Includes</div>
+        <ul class="includes-list">
+          <li>AAX · VST3 · AU installer</li>
+          <li>PDF user manual</li>
+          <li>Lifetime v1 updates</li>
+          <li>Direct email support</li>
+          <li>30-day return policy</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container reveal">
+    <div class="section-eyebrow">About Gauss DSP</div>
+    <h2 class="section-heading" style="max-width:500px;">Named after Carl Friedrich Gauss.<br><em>Unit of magnetic flux density.</em></h2>
+    <p class="about-body">
+      Gauss DSP makes audio tools for working engineers. Not for the plugin collection. Gauss / Chaos is the first instrument — a deliberate machine that finds combinations you wouldn't find yourself, built on signal flow logic that makes the results usable.
+    </p>
+    <div class="serial">GAUSS DSP™ · NASHVILLE, TN · GDS-001 · REV A</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-logo">Gauss <span>DSP</span>™</div>
+    <div class="footer-meta">
+      gaussdsp.com<br>
+      © 2026 Gauss DSP. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+<script>
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 60);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
