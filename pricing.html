@@ -95,7 +95,8 @@
   Paddle.Initialize({ token: 'live_ac68e6cafa1c7bb230d5a345e83' });
   function openCheckout() {
     Paddle.Checkout.open({
-      items: [{ priceId: 'pri_01kptjw7yecgk6pyg6apwhgvt8', quantity: 1 }]
+      items: [{ priceId: 'pri_01kptjw7yecgk6pyg6apwhgvt8', quantity: 1 }],
+      settings: { successUrl: 'https://gaussdsp.com/download.html' }
     });
   }
 </script>
