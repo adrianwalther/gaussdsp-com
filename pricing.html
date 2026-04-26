@@ -48,7 +48,6 @@
   .footer-copy { font-family: var(--mono); font-size: 10px; color: var(--plate); }
   .btn { cursor: pointer; border: none; }
 </style>
-<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 </head>
 <body>
 <nav>
@@ -57,7 +56,7 @@
     <ul class="nav-links">
       <li><a href="/">Plugin</a></li>
       <li><a href="/pricing.html" style="color:var(--cream)">Pricing</a></li>
-      <li><a href="#" class="nav-cta" onclick="openCheckout(); return false;">Buy Now</a></li>
+      <li><a href="https://gaussdsp.lemonsqueezy.com/checkout/buy/7e8f2c89-6816-466b-adc5-cf3a3f20e2d2" class="nav-cta">Buy Now</a></li>
     </ul>
   </div>
 </nav>
@@ -76,8 +75,8 @@
         <li>Free updates, same major version</li>
         <li>No iLok required for VST3/AU</li>
       </ul>
-      <button onclick="openCheckout()" class="btn">Buy Gauss Chaos</button>
-      <p class="fine-print">Secure checkout via Paddle. All major cards, PayPal, Apple Pay accepted.</p>
+      <a href="https://gaussdsp.lemonsqueezy.com/checkout/buy/7e8f2c89-6816-466b-adc5-cf3a3f20e2d2" class="btn">Buy Gauss Chaos</a>
+      <p class="fine-print">Secure checkout via Lemon Squeezy. All major cards, PayPal, Apple Pay accepted.</p>
     </div>
   </div>
 </main>
@@ -91,14 +90,5 @@
     <span class="footer-copy">© 2026 Gauss DSP. All rights reserved.</span>
   </div>
 </footer>
-<script>
-  Paddle.Initialize({ token: 'live_ac68e6cafa1c7bb230d5a345e83' });
-  function openCheckout() {
-    Paddle.Checkout.open({
-      items: [{ priceId: 'pri_01kptjw7yecgk6pyg6apwhgvt8', quantity: 1 }],
-      settings: { successUrl: 'https://gaussdsp.com/download.html' }
-    });
-  }
-</script>
 </body>
 </html>
