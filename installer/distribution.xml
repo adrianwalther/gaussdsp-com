@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Gauss Chaos 1.0</title>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <license file="license.html" mime-type="text/html"/>
+    <options customize="allow" require-scripts="false" rootVolumeOnly="true"/>
+    <choices-outline>
+        <line choice="com.gaussdsp.chaos.vst3"/>
+        <line choice="com.gaussdsp.chaos.au"/>
+    </choices-outline>
+    <choice id="com.gaussdsp.chaos.vst3" title="VST3" description="Gauss Chaos VST3 plug-in for VST3-compatible DAWs." selected="true">
+        <pkg-ref id="com.gaussdsp.chaos.vst3"/>
+    </choice>
+    <choice id="com.gaussdsp.chaos.au" title="Audio Unit (AU)" description="Gauss Chaos Audio Unit plug-in for Logic Pro, GarageBand, and AU-compatible DAWs." selected="true">
+        <pkg-ref id="com.gaussdsp.chaos.au"/>
+    </choice>
+    <pkg-ref id="com.gaussdsp.chaos.vst3" version="1.0.0" auth="root">GaussChaos-VST3.pkg</pkg-ref>
+    <pkg-ref id="com.gaussdsp.chaos.au" version="1.0.0" auth="root">GaussChaos-AU.pkg</pkg-ref>
+</installer-gui-script>
